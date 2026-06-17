@@ -168,7 +168,7 @@ def call_gemini(file_data, system_prompt):
         temperature=0.1, response_mime_type="application/json")
     prompt=(f"B.Tech Report ({file_data['name']}, ~{file_data.get('pages','?')} pages):\n\n"
             f"{file_data['text']}\n\nReview against SSIPMT guidelines. Return only JSON.")
-    response=client.models.generate_content(model="gemini-1.5-flash",contents=[prompt],config=config)
+    response=client.models.generate_content(model="gemini-2.0-flash",contents=[prompt],config=config)
     raw=response.text; clean=raw.replace("```json","").replace("```","").strip()
     s=clean.find("{"); e=clean.rfind("}")+1
     if s>=0 and e>s: clean=clean[s:e]
