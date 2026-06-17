@@ -1,4 +1,5 @@
 
+
 import streamlit as st
 from groq import Groq
 import json
@@ -142,9 +143,9 @@ def compute_weighted_score(review):
 
 def override_recommendation(weighted_score):
     """Override AI recommendation based on weighted score thresholds."""
-    if weighted_score >= 85:
+    if weighted_score >= 95:
         return "APPROVED"
-    elif weighted_score >= 75:
+    elif weighted_score >= 80:
         return "MINOR_REVISION"
     elif weighted_score >= 40:
         return "MAJOR_REVISION"
@@ -189,6 +190,34 @@ def extract_file(uploaded_file):
         return {"text":text[:25000],"name":uploaded_file.name,"pages":est_pages}
     raise ValueError("Upload PDF or DOCX only.")
 
+def robust_json_parse(raw):
+    """Robustly extract JSON even if response is truncated."""
+    clean = raw.replace("```json","").replace("```","").strip()
+    start = clean.find("{")
+    if start < 0:
+        raise ValueError("No JSON found in response")
+    # Walk to find matching closing brace
+    depth=0; end_pos=-1; in_str=False; esc=False
+    for i,ch in enumerate(clean[start:],start):
+        if esc: esc=False; continue
+        if ch=="\\" and in_str: esc=True; continue
+        if ch=='"' and not esc: in_str=not in_str; continue
+        if in_str: continue
+        if ch=="{": depth+=1
+        elif ch=="}":
+            depth-=1
+            if depth==0: end_pos=i+1; break
+    if end_pos>start:
+        try: return json.loads(clean[start:end_pos])
+        except: pass
+    # Fallback: try rfind
+    end_pos=clean.rfind("}")+1
+    if start>=0 and end_pos>start:
+        try: return json.loads(clean[start:end_pos])
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Could not parse JSON: {e}")
+    raise ValueError("No valid JSON in response")
+
 def call_groq(file_data, system_prompt):
     """Send extracted text to Groq and get JSON review."""
     api_key=get_api_key()
@@ -205,10 +234,7 @@ def call_groq(file_data, system_prompt):
         temperature=0.1, max_tokens=4096,
     )
     raw=response.choices[0].message.content
-    clean=raw.replace("```json","").replace("```","").strip()
-    s=clean.find("{"); e=clean.rfind("}")+1
-    if s>=0 and e>s: clean=clean[s:e]
-    return json.loads(clean)
+    return robust_json_parse(raw)
 
 # ─────────────────────────────────────────────
 # DISPLAY REVIEW
@@ -223,6 +249,7 @@ def show_review(rv):
         st.write(rv.get("executive_summary",""))
     with c2: st.metric("Weighted Score",f"{ws}/100"); st.caption(f"AI raw: {rv.get('overall_score',0)}")
     with c3: st.metric("Decision",""); st.markdown(f"**{rec_icon(rec)}**")
+    st.caption("Score thresholds:  >=95 = APPROVED  |  75-94 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  <40 = REJECTED")
     st.divider()
 
     cols=st.columns(6)
@@ -387,7 +414,7 @@ st.divider()
 # ─────────────────────────────────────────────
 # TABS
 # ─────────────────────────────────────────────
-tab1,tab2=st.tabs(["📋  Single Review","📦  Batch Review"])
+tab1, = st.tabs(["📋  Single Review"])
 
 with tab1:
     st.info(f"📌 Maximum **{MAX_PAGES} pages** per report (SSIPMT guideline: 40–80 pages). Files exceeding this limit will not be processed.")
@@ -419,72 +446,8 @@ with tab1:
                     else: st.error(f"Review failed: {e}")
 
     if st.session_state.single_review:
-        st.divider(); show_review(st.session_state.single_review)
-
-with tab2:
-    st.info(f"📌 Each file must be under **{MAX_PAGES} pages**. Files exceeding the limit are skipped automatically.")
-    batch_files=st.file_uploader("Drag and drop multiple PDF or DOCX files here",
-                                  type=["pdf","docx"],accept_multiple_files=True,key="batch_upload")
-    if batch_files:
-        st.success(f"📦 {len(batch_files)} file(s) ready")
-        for f in batch_files: st.caption(f"  • {f.name}  ({f.size/1024/1024:.1f} MB)")
-
-        if st.button("🚀 Start Batch Review",type="primary"):
-            if not sub_name.strip() or not sub_code.strip():
-                st.warning("⚠️ Please enter Subject Name and Subject Code above first."); st.stop()
-
-            sys_prompt=build_system_prompt(session,sub_name,sub_code,semester,ff)
-            results=[]; prog=st.progress(0); status_ph=st.empty()
-
-            for idx,uf in enumerate(batch_files):
-                status_ph.info(f"🔍 {idx+1}/{len(batch_files)}: **{uf.name}**")
-                try:
-                    fd=extract_file(uf); rv=call_groq(fd,sys_prompt); ws=compute_weighted_score(rv)
-                    results.append({"file":uf.name,"review":rv,"score":ws,"error":None})
-                except Exception as e:
-                    results.append({"file":uf.name,"review":None,"score":0,"error":str(e)})
-                prog.progress((idx+1)/len(batch_files))
-                if idx<len(batch_files)-1: time.sleep(2)
-
-            st.session_state.batch_results=results
-            status_ph.success(f"✅ Done — {len([r for r in results if not r['error']])}/{len(batch_files)} reviewed")
-
-    if st.session_state.batch_results:
-        st.divider(); st.subheader("📊 Comparison Table")
-        rows=[]
-        for r in st.session_state.batch_results:
-            if r["error"]:
-                rows.append({"File":r["file"],"Students":"—","Title":f"ERROR: {r['error'][:50]}",
-                             "Score":0,"Format":0,"Front Matter":0,"Technical":0,
-                             "Abstract":0,"References":0,"Language":0,"Recommendation":"ERROR"})
-            else:
-                rv=r["review"]
-                rows.append({"File":r["file"],"Students":", ".join(rv.get("student_names",["—"])),
-                    "Title":rv.get("project_title","—")[:35],"Score":r["score"],
-                    "Format":rv.get("format_compliance",{}).get("score",0),
-                    "Front Matter":rv.get("front_matter",{}).get("score",0),
-                    "Technical":rv.get("technical_elements",{}).get("score",0),
-                    "Abstract":rv.get("abstract",{}).get("score",0),
-                    "References":rv.get("references",{}).get("score",0),
-                    "Language":rv.get("language_quality",{}).get("score",0),
-                    "Recommendation":rv.get("overall_recommendation","—").replace("_"," ")})
-
-        df=pd.DataFrame(rows).sort_values("Score",ascending=False)
-        st.dataframe(df,hide_index=True,use_container_width=True)
-        c1,c2=st.columns(2)
-        with c1:
-            st.download_button("📊 Download CSV",df.to_csv(index=False).encode(),
-                f"Batch_{datetime.now().strftime('%Y%m%d')}.csv","text/csv",use_container_width=True)
-        with c2:
-            try:
-                cmp=generate_comparison_table(st.session_state.batch_results,st.session_state.weights)
-                st.download_button("📄 Download PDF",cmp,f"Batch_{datetime.now().strftime('%Y%m%d')}.pdf",
-                    "application/pdf",use_container_width=True,type="primary")
-            except Exception as e: st.error(str(e))
-
-        st.divider(); st.subheader("View Individual Review")
-        done_r=[r for r in st.session_state.batch_results if not r["error"]]
-        if done_r:
-            sel_name=st.selectbox("Select report:",[r["file"] for r in done_r])
-            sel=next(r for r in done_r if r["file"]==sel_name)
-            show_review(sel["review"])
+        if st.button("🔄 Review Another Report", type="secondary"):
+            st.session_state.single_review = None
+            st.rerun()
+        st.divider()
+        show_review(st.session_state.single_review)
