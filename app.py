@@ -223,9 +223,25 @@ for k, v in {"weights": dict(DEFAULT_WEIGHTS), "single_review": None, "batch_res
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
+#def get_api_key():
+#    return (os.getenv("GEMINI_API_KEY", "")
+#            or st.session_state.get("gemini_key", ""))
 def get_api_key():
-    return (os.getenv("GEMINI_API_KEY", "")
-            or st.session_state.get("gemini_key", ""))
+    # 1. Try to get the key from the environment or session state
+    raw_key = os.getenv("GEMINI_API_KEY", "") or st.session_state.get("gemini_key", "")
+    
+    # 2. Fallback to Streamlit Secrets (useful if you deploy to Streamlit Cloud)
+    if not raw_key:
+        try:
+            raw_key = st.secrets.get("GEMINI_API_KEY", "")
+        except Exception:
+            pass
+            
+    # 3. CRITICAL FIX: Strip all invisible whitespace and accidental quotation marks
+    if raw_key:
+        return raw_key.strip().strip("\"'")
+        
+    return ""
 
 def score_emoji(s):
     return "🟢" if s >= 80 else ("🟡" if s >= 60 else "🔴")
@@ -537,10 +553,30 @@ with st.sidebar:
     st.divider()
 
     # ── API Key ──
+    #st.subheader("🔑 Gemini API Key")
+    #env_key = os.getenv("GEMINI_API_KEY", "")
+    #if env_key:
+    #    st.success("✓ Key loaded from .env file")
+    #else:
+    #    st.session_state["gemini_key"] = st.text_input(
+    #        "Paste your free Gemini API key",
+    #        type="password",
+    #        help="Get your free key in 2 minutes at aistudio.google.com/apikey"
+    #    )
+    #    st.caption("🔗 [Get free key → aistudio.google.com/apikey](https://aistudio.google.com/apikey)")
+
+    # ── API Key ──
     st.subheader("🔑 Gemini API Key")
+    
+    # Check env AND secrets
     env_key = os.getenv("GEMINI_API_KEY", "")
-    if env_key:
-        st.success("✓ Key loaded from .env file")
+    try:
+        secret_key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        secret_key = ""
+        
+    if env_key or secret_key:
+        st.success("✓ Key loaded securely")
     else:
         st.session_state["gemini_key"] = st.text_input(
             "Paste your free Gemini API key",
