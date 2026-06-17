@@ -190,7 +190,8 @@ def call_groq(file_data):
     client = Groq(api_key=api_key)
 
     # Groq context window is 128k tokens — truncate text to be safe
-    text = file_data["text"][:35000]
+    #text = file_data["text"][:35000]
+    text = file_data["text"][:18000]
 
     prompt = (
         f"B.Tech Project Report (file: {file_data['name']}):\n\n"
@@ -199,7 +200,8 @@ def call_groq(file_data):
     )
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        #model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",   "content": prompt}
