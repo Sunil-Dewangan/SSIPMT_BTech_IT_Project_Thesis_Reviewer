@@ -1,6 +1,7 @@
 
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import base64
 import json
 import io
@@ -223,9 +224,6 @@ for k, v in {"weights": dict(DEFAULT_WEIGHTS), "single_review": None, "batch_res
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
-#def get_api_key():
-#    return (os.getenv("GEMINI_API_KEY", "")
-#            or st.session_state.get("gemini_key", ""))
 def get_api_key():
     # 1. Try to get the key from the environment or session state
     raw_key = os.getenv("GEMINI_API_KEY", "") or st.session_state.get("gemini_key", "")
@@ -286,14 +284,15 @@ def call_gemini(file_data):
         st.error("⚠️ No Gemini API key found. Add it in the sidebar.")
         st.stop()
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
+    # 1. Initialize the new SDK Client
+    client = genai.Client(api_key=api_key)
+    
+    # 2. Configure generation with the new types object
+    config = types.GenerateContentConfig(
         system_instruction=SYSTEM_PROMPT,
-        generation_config=genai.GenerationConfig(
-            max_output_tokens=4096,
-            temperature=0.1,     # low = consistent structured output
-        )
+        max_output_tokens=4096,
+        temperature=0.1,
+        response_mime_type="application/json", # Forces strict JSON output
     )
 
     if file_data["type"] == "pdf":
@@ -301,42 +300,54 @@ def call_gemini(file_data):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(file_data["bytes"])
             tmp_path = tmp.name
+            
         try:
-            uploaded = genai.upload_file(tmp_path, mime_type="application/pdf",
-                                         display_name=file_data["name"])
+            # Upload using the new client
+            uploaded = client.files.upload(file=tmp_path)
+            
             # Wait until Gemini has processed the file
             for _ in range(20):
-                f = genai.get_file(uploaded.name)
+                f = client.files.get(name=uploaded.name)
                 if f.state.name == "ACTIVE":
                     break
                 if f.state.name == "FAILED":
                     raise ValueError("Gemini failed to process the PDF. Try a smaller file or convert to DOCX.")
                 time.sleep(3)
-            response = model.generate_content([
-                uploaded,
-                "Review this B.Tech project report against SSIPMT guidelines. Return only the JSON."
-            ])
+                
+            # Generate content using the uploaded file reference
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=[uploaded, "Review this B.Tech project report against SSIPMT guidelines. Return only the JSON."],
+                config=config
+            )
+            
             try:
-                genai.delete_file(uploaded.name)
+                client.files.delete(name=uploaded.name)
             except Exception:
                 pass
         finally:
             os.unlink(tmp_path)
     else:
         # DOCX extracted text
-        response = model.generate_content(
-            f"B.Tech Project Report (extracted from DOCX file: {file_data['name']}):\n\n"
-            f"{file_data['data'][:40000]}\n\n"
-            f"Review this report against SSIPMT guidelines. Return only the JSON review object."
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=[
+                f"B.Tech Project Report (extracted from DOCX file: {file_data['name']}):\n\n"
+                f"{file_data['data'][:40000]}\n\n"
+                f"Review this report against SSIPMT guidelines. Return only the JSON review object."
+            ],
+            config=config
         )
 
     raw   = response.text
     clean = raw.replace("```json", "").replace("```", "").strip()
+    
     # Remove leading/trailing text that is not JSON
     start = clean.find("{")
     end   = clean.rfind("}") + 1
     if start >= 0 and end > start:
         clean = clean[start:end]
+        
     return json.loads(clean)
 
 # ─────────────────────────────────────────────
@@ -553,22 +564,7 @@ with st.sidebar:
     st.divider()
 
     # ── API Key ──
-    #st.subheader("🔑 Gemini API Key")
-    #env_key = os.getenv("GEMINI_API_KEY", "")
-    #if env_key:
-    #    st.success("✓ Key loaded from .env file")
-    #else:
-    #    st.session_state["gemini_key"] = st.text_input(
-    #        "Paste your free Gemini API key",
-    #        type="password",
-    #        help="Get your free key in 2 minutes at aistudio.google.com/apikey"
-    #    )
-    #    st.caption("🔗 [Get free key → aistudio.google.com/apikey](https://aistudio.google.com/apikey)")
-
-    # ── API Key ──
     st.subheader("🔑 Gemini API Key")
-    
-    # Check env AND secrets
     env_key = os.getenv("GEMINI_API_KEY", "")
     try:
         secret_key = st.secrets.get("GEMINI_API_KEY", "")
