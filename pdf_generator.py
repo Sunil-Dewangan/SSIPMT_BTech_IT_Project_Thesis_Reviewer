@@ -61,7 +61,7 @@ class BasePDF(FPDF):
         self.set_font("Helvetica","B",7)
         self.set_text_color(255,255,255)
         self.set_y(4)
-        self.cell(0,6,safe(SSIPMT+"  |  "+DEPT),align="C")
+        self.cell(170,6,safe(SSIPMT+"  |  "+DEPT),align="C")
         self.set_text_color(0,0,0)
         self.set_y(18)
 
@@ -69,7 +69,7 @@ class BasePDF(FPDF):
         self.set_y(-12)
         self.set_font("Helvetica","I",7)
         self.set_text_color(150,150,150)
-        self.cell(0,6,safe(f"Page {self.page_no()}  |  Generated {datetime.now().strftime('%d %B %Y')}  |  AI-generated review - SSIPMT Dept. of IT"),align="C")
+        self.cell(170,6,safe(f"Page {self.page_no()}  |  Generated {datetime.now().strftime('%d %B %Y')}  |  AI-generated review - SSIPMT Dept. of IT"),align="C")
         self.set_text_color(0,0,0)
 
     def sec(self,text):
@@ -77,7 +77,7 @@ class BasePDF(FPDF):
         self.set_fill_color(30,58,138)
         self.set_text_color(255,255,255)
         self.set_font("Helvetica","B",9)
-        self.cell(0,6,safe("  "+text),fill=True,ln=True)
+        self.cell(170,6,safe("  "+text),fill=True,ln=True)
         self.set_text_color(0,0,0)
         self.ln(1)
 
@@ -117,10 +117,10 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.ln(2)
     pdf.set_font("Helvetica","B",15)
     pdf.set_text_color(30,58,138)
-    pdf.cell(0,9,"B.Tech Project Report - AI Review",align="C",ln=True)
+    pdf.cell(170,9,"B.Tech Project Report - AI Review",align="C",ln=True)
     pdf.set_font("Helvetica","",8)
     pdf.set_text_color(100,100,100)
-    pdf.cell(0,5,safe(date_str),align="C",ln=True)
+    pdf.cell(170,5,safe(date_str),align="C",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
@@ -178,21 +178,21 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_fill_color(248,250,252)
     pdf.set_text_color(60,60,60)
     pdf.set_font("Helvetica","",8)
-    pdf.cell(0,22,safe(f"  AI raw: {review.get('overall_score',0)}/100\n  Weighted score / 100\n  Custom weights applied"),border=1,fill=True,ln=True)
+    pdf.cell(69,22,safe(f"  AI raw: {review.get('overall_score',0)}/100  Weighted:{weighted_score}/100  Custom weights applied"),border=1,fill=True,ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
     # Threshold legend
     pdf.set_font("Helvetica","I",7)
     pdf.set_text_color(100,100,100)
-    pdf.cell(0,4,"Score thresholds:  >= 95 = APPROVED  |  75-94 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
+    pdf.cell(170,4,"Thresholds: >=95=APPROVED | 75-94=MINOR REVISION | 40-74=MAJOR REVISION | <40=REJECTED",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
     # Executive summary
     pdf.set_fill_color(239,246,255)
     pdf.set_font("Helvetica","I",8)
-    pdf.multi_cell(0,4,safe(review.get("executive_summary","")),border=1,fill=True)
+    pdf.multi_cell(170,4,safe(review.get("executive_summary","")),border=1,fill=True)
     pdf.ln(3)
 
     # ── Dimension Scores ──
@@ -200,7 +200,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_font("Helvetica","B",8)
     pdf.set_fill_color(30,58,138)
     pdf.set_text_color(255,255,255)
-    for hdr,w in [("Dimension",72),("Score",18),("Weight",16),("Assessment",0)]:
+    for hdr,w in [("Dimension",72),("Score",18),("Weight",16),("Assessment",64)]:
         pdf.cell(w,6,safe(hdr),border=1,fill=True)
     pdf.ln()
     pdf.set_text_color(0,0,0)
@@ -221,7 +221,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
         pdf.cell(16,5,safe(f"{wt}%"),border=1,align="C",fill=True)
         assess="Good" if score>=80 else ("Needs improvement" if score>=60 else "Significant work required")
         pdf.set_font("Helvetica","",7)
-        pdf.cell(0,5,safe(assess),border=1,fill=True,ln=True)
+        pdf.cell(64,5,safe(assess),border=1,fill=True,ln=True)
     pdf.ln(3)
 
     # ── Issues ──
@@ -299,10 +299,10 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
             pdf.cell(30,5,safe(("PRESENT"+cnt) if present else "MISSING"))
             pdf.set_text_color(0,0,0)
             pdf.set_font("Helvetica","",7)
-            pdf.cell(0,5,safe(str(el.get("issues","") or "")[:55]),ln=True)
+            pdf.cell(64,5,safe(str(el.get("issues","") or "")[:55]),ln=True)
         tst=te.get("testing_types",{})
         pdf.set_font("Helvetica","B",8)
-        pdf.cell(0,5,safe(f"Testing: {tst.get('count',0)}/8 types - {', '.join(tst.get('types_found',[]) or ['None identified'])}"),ln=True)
+        pdf.cell(170,5,safe(f"Testing: {tst.get('count',0)}/8 types - {', '.join(tst.get('types_found',[]) or ['None identified'])}"),ln=True)
 
     # ── Strengths ──
     strengths=review.get("strengths",[])
@@ -318,20 +318,20 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_font("Helvetica","",9)
     pdf.cell(80,5,"Reviewed by:",ln=False)
     pdf.cell(70,5,"Designation:",ln=False)
-    pdf.cell(0,5,safe(f"Date: {date_str}"),ln=True)
+    pdf.cell(30,5,safe(f"Date: {date_str}"),ln=True)
     pdf.ln(14)
     pdf.cell(80,0,"_"*34,ln=False)
     pdf.cell(70,0,"_"*28,ln=False)
-    pdf.cell(0,0,"_"*13,ln=True)
+    pdf.cell(30,0,"_"*13,ln=True)
     pdf.ln(3)
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(100,100,100)
     pdf.cell(80,4,"Name & Designation",ln=False)
     pdf.cell(70,4,"Department / SSIPMT Raipur",ln=False)
-    pdf.cell(0,4,"Signature",ln=True)
+    pdf.cell(30,4,"Signature",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(8)
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(150,150,150)
-    pdf.multi_cell(0,4,"This report was generated by an AI system. It is a review aid for supervising faculty. Final decisions remain with the Department of IT, SSIPMT Raipur.")
+    pdf.multi_cell(170,4,"This report was generated by an AI system. It is a review aid for supervising faculty. Final decisions remain with the Department of IT, SSIPMT Raipur.")
 
     buf=io.BytesIO(); pdf.output(buf); return buf.getvalue()
 
@@ -346,18 +346,18 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     # ── Title ──
     pdf.ln(2)
     pdf.set_font("Helvetica","B",14); pdf.set_text_color(30,58,138)
-    pdf.cell(W,9,"STUDENT REVIEW REPORT CARD",align="C",ln=True)
+    pdf.cell(170,9,"STUDENT REVIEW REPORT CARD",align="C",ln=True)
     pdf.set_font("Helvetica","",8); pdf.set_text_color(100,100,100)
-    pdf.cell(W,5,safe(f"B.Tech Project Report  |  {date_str}"),align="C",ln=True)
+    pdf.cell(170,5,safe(f"B.Tech Project Report  |  {date_str}"),align="C",ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
     # ── Project Info ──
     pdf.set_fill_color(239,246,255); pdf.set_font("Helvetica","B",9)
-    pdf.multi_cell(W,6,safe(f"Project: {review.get('project_title','-')}"),border=1,fill=True)
+    pdf.multi_cell(170,6,safe(f"Project: {review.get('project_title','-')}"),border=1,fill=True)
     pdf.set_font("Helvetica","",8)
     # Student names on separate line to prevent overflow
     students = ", ".join(review.get('student_names',['-']))
-    pdf.multi_cell(W,5,safe(f"Student(s): {students}"),border=0,fill=False)
+    pdf.multi_cell(170,5,safe(f"Student(s): {students}"),border=0,fill=False)
     pdf.cell(W,5,safe(f"Guide: {review.get('guide_name','-')}"),border="B",ln=True)
     pdf.ln(3)
 
@@ -372,7 +372,7 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_text_color(0,0,0)
     # Threshold legend — full width, no overflow
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(100,100,100)
-    pdf.cell(W,4,safe(f"Score:{weighted_score}/100  AI raw:{review.get('overall_score',0)}/100  |  >=95=Approved  75-94=Minor  40-74=Major  <40=Rejected"),ln=True)
+    pdf.cell(170,4,safe(f"Score:{weighted_score}/100  AI raw:{review.get('overall_score',0)}/100  |  >=95=Approved  75-94=Minor  40-74=Major  <40=Rejected"),ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
     # ── Dimension Table ──
@@ -409,7 +409,7 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     if pal:
         lbl_w=28; act_w=W-lbl_w
         pdf.set_font("Helvetica","B",9); pdf.set_text_color(30,58,138)
-        pdf.cell(W,6,"Priority Actions for Student:",ln=True)
+        pdf.cell(170,6,"Priority Actions for Student:",ln=True)
         pdf.set_text_color(0,0,0)
         for a in pal:
             sev=a.get("severity","")
@@ -458,14 +458,14 @@ def generate_comparison_table(batch_results:list, weights:dict) -> bytes:
     pdf=BasePDF(); pdf.add_page()
     date_str=datetime.now().strftime("%d %B %Y")
     pdf.ln(2); pdf.set_font("Helvetica","B",13); pdf.set_text_color(30,58,138)
-    pdf.cell(0,9,"BATCH REVIEW COMPARISON TABLE",align="C",ln=True)
+    pdf.cell(170,9,"BATCH REVIEW COMPARISON TABLE",align="C",ln=True)
     pdf.set_font("Helvetica","",8); pdf.set_text_color(100,100,100)
     done=[r for r in batch_results if not r.get("error")]
-    pdf.cell(0,5,safe(f"Generated {date_str}  |  {len(done)} report(s) reviewed"),align="C",ln=True)
+    pdf.cell(170,5,safe(f"Generated {date_str}  |  {len(done)} report(s) reviewed"),align="C",ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(4)
     wt_note="Weights: "+" | ".join(f"{WEIGHT_NAMES[k]}={v}%" for k,v in weights.items() if k in WEIGHT_NAMES)
     pdf.set_font("Helvetica","I",7); pdf.set_fill_color(239,246,255)
-    pdf.multi_cell(0,4,safe(wt_note),border=1,fill=True); pdf.ln(3)
+    pdf.multi_cell(170,4,safe(wt_note),border=1,fill=True); pdf.ln(3)
     pdf.set_font("Helvetica","B",7); pdf.set_fill_color(30,58,138); pdf.set_text_color(255,255,255)
     for hdr,w in [("#",6),("File",38),("Student(s)",36),("Title",36),("Score",12),("Fmt",9),("FM",8),("Tech",9),("Abs",8),("Ref",8),("Lang",8)]:
         pdf.cell(w,6,safe(hdr),border=1,fill=True,align="C" if w<15 else "L")
@@ -475,7 +475,7 @@ def generate_comparison_table(batch_results:list, weights:dict) -> bytes:
             pdf.set_fill_color(254,226,226); pdf.set_font("Helvetica","I",7)
             pdf.cell(6,5,safe(str(i+1)),border=1,fill=True,align="C")
             pdf.cell(38,5,safe(r["file"][:22]),border=1,fill=True)
-            pdf.cell(0,5,safe("ERROR: "+str(r.get("error",""))[:55]),border=1,fill=True,ln=True)
+            pdf.cell(76,5,safe("ERROR: "+str(r.get("error",""))[:55]),border=1,fill=True,ln=True)
             continue
         rv=r["review"]; ws=_ws(rv,weights)
         pdf.set_fill_color(255,255,255) if i%2==0 else pdf.set_fill_color(249,250,251)
