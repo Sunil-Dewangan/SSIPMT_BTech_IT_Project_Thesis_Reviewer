@@ -81,12 +81,15 @@ class BasePDF(FPDF):
         self.set_text_color(0,0,0)
         self.ln(1)
 
-    def kv(self,label,value,lw=55,fill=False):
+    def kv(self, label, value, lw=55, fill=False):
+        """Key-value row — explicit widths, no cell(0,...) overflow."""
+        W=170; vw=W-lw
         if fill: self.set_fill_color(249,250,251)
+        else:    self.set_fill_color(255,255,255)
         self.set_font("Helvetica","B",8)
         self.cell(lw,5,safe(label),border="B",fill=fill)
         self.set_font("Helvetica","",8)
-        self.cell(0,5,safe(str(value))[:100],border="B",fill=fill,ln=True)
+        self.cell(vw,5,safe(str(value))[:105],border="B",fill=fill,ln=True)
 
     def sc_cell(self,score,w=18,h=6):
         r,g,b=sc(score)
@@ -99,7 +102,7 @@ class BasePDF(FPDF):
         self.set_x(self.l_margin+indent)
         self.set_font("Helvetica","",8)
         self.set_text_color(*color)
-        self.multi_cell(0,4,safe("- "+str(text)))
+        self.multi_cell(170-indent,4,safe("- "+str(text)))
         self.set_text_color(0,0,0)
 
 
@@ -123,17 +126,35 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
 
     # ── Report Info ──
     pdf.sec("Report Information")
-    for i, (k, v) in enumerate([
-    ("Project Title", review.get("project_title", "-")),
-    ("Guide",         review.get("guide_name", "-")),
-    ("Report Type",   review.get("report_type", "B.Tech Project Report")),
-    ]):
-    pdf.kv(k, str(v)[:95], fill=(i % 2 == 0))
-
-    # Handle student names separately with line breaks
-    student_names = review.get("student_names", ["-"])
-    students_text = "\n".join(student_names)
-    pdf.kv("Student(s)", students_text, fill=False)
+    lw=55; vw=170-lw
+    # Student names separately with multi_cell to handle long lists
+    students_val = safe(", ".join(review.get("student_names",["-"])))
+    rows=[
+        ("Project Title", safe(str(review.get("project_title","-"))[:100])),
+        ("Guide",         safe(str(review.get("guide_name","-"))[:100])),
+        ("Report Type",   safe(str(review.get("report_type","B.Tech Project Report"))[:80])),
+    ]
+    # Project Title first
+    pdf.set_fill_color(249,250,251); pdf.set_font("Helvetica","B",8)
+    pdf.cell(lw,5,"Project Title",border="B",fill=True)
+    pdf.set_font("Helvetica","",8)
+    pdf.cell(vw,5,rows[0][1],border="B",fill=True,ln=True)
+    # Student(s) — multi_cell to wrap long names
+    pdf.set_fill_color(255,255,255); pdf.set_font("Helvetica","B",8)
+    pdf.cell(lw,5,"Student(s)",border="B",fill=False)
+    pdf.set_font("Helvetica","",8)
+    pdf.set_x(pdf.l_margin+lw)
+    pdf.multi_cell(vw,5,students_val,border="B",fill=False)
+    # Guide
+    pdf.set_fill_color(249,250,251); pdf.set_font("Helvetica","B",8)
+    pdf.cell(lw,5,"Guide",border="B",fill=True)
+    pdf.set_font("Helvetica","",8)
+    pdf.cell(vw,5,rows[1][1],border="B",fill=True,ln=True)
+    # Report Type
+    pdf.set_fill_color(255,255,255); pdf.set_font("Helvetica","B",8)
+    pdf.cell(lw,5,"Report Type",border="B",fill=False)
+    pdf.set_font("Helvetica","",8)
+    pdf.cell(vw,5,rows[2][1],border="B",fill=False,ln=True)
 
     # ── Score Summary ──
     pdf.ln(4)
