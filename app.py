@@ -1,4 +1,10 @@
-
+"""
+SSIPMT B.Tech Project Thesis Report Reviewer
+Department of Information Technology, SSIPMT Raipur
+Developed by Sunil Kumar Dewangan
+Powered by Groq API — 100% FREE
+Get free API key at: https://console.groq.com
+"""
 
 import streamlit as st
 from groq import Groq
@@ -38,9 +44,9 @@ st.markdown("""
 <div style='text-align:center; padding:18px 0 10px 0;'>
   <span style='font-size:36px;'>🎓</span>
   <h2 style='margin:4px 0 2px 0; color:#1e3a8a; font-size:26px;'>
-    SSIPMT Project Thesis Report Reviewer
+    SSIPMT, Raipur Project Thesis Report Reviewer
   </h2>
-  <p style='margin:0; color:#6b7280; font-size:13px;'>
+  <p style='margin:0; color:#6b7280; font-size:25px;'>
     Department of Information Technology &nbsp;|&nbsp;
     Developed by <strong>Sunil Kumar Dewangan</strong>
   </p>
@@ -380,7 +386,7 @@ if not get_api_key():
             type="password", help="Get free key at console.groq.com")
         st.caption("🔗 [Get free key → console.groq.com](https://console.groq.com)")
 else:
-    st.caption("✅ Groq API key loaded")
+    st.caption("✅ API key loaded")
 
 # ─────────────────────────────────────────────
 # REPORT INFORMATION FORM
