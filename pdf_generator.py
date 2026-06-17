@@ -160,7 +160,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     # Threshold legend
     pdf.set_font("Helvetica","I",7)
     pdf.set_text_color(100,100,100)
-    pdf.cell(0,4,"Score thresholds:  >= 85 = APPROVED  |  75-84 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
+    pdf.cell(0,4,"Score thresholds:  >= 95 = APPROVED  |  75-84 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
@@ -267,7 +267,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
             if not el: continue
             present=el.get("present",False)
             pdf.set_font("Helvetica","",8)
-            pdf.cell(85,5,safe(nm))
+            pdf.cell(95,5,safe(nm))
             pdf.set_text_color(22,163,74) if present else pdf.set_text_color(220,38,38)
             pdf.set_font("Helvetica","B",8)
             cnt=f" ({el['count']})" if "count" in el else ""
@@ -337,7 +337,7 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_fill_color(*rb); pdf.set_text_color(*rc); pdf.set_font("Helvetica","B",10)
     pdf.cell(75,24,safe(rec.replace("_"," ")),border=1,fill=True,align="C")
     pdf.set_fill_color(248,250,252); pdf.set_text_color(70,70,70); pdf.set_font("Helvetica","",8)
-    pdf.cell(0,24,safe(f"  Score: {weighted_score}/100\n  AI raw: {review.get('overall_score',0)}/100\n  Thresholds: >=85 Approved, >=75 Minor,\n  >=40 Major, <40 Rejected"),border=1,fill=True,ln=True)
+    pdf.cell(0,24,safe(f"  Score: {weighted_score}/100\n  AI raw: {review.get('overall_score',0)}/100\n  Thresholds: >=95 Approved, >=75 Minor,\n  >=40 Major, <40 Rejected"),border=1,fill=True,ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
     # Dimension table
