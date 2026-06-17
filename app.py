@@ -568,7 +568,10 @@ with st.sidebar:
         new_wt[k] = st.slider(label, 5, 60, st.session_state.weights[k], key=f"w_{k}")
     st.session_state.weights = new_wt
     tot = sum(new_wt.values())
-    st.success(f"Total: {tot}% ✓") if abs(tot - 100) < 1 else st.warning(f"Total: {tot}% (target: 100%)")
+    if abs(tot - 100) < 1:
+        st.success(f"Total: {tot}% ✓")
+    else:
+        st.warning(f"Total: {tot}% (target: 100%)")
     if st.button("↩ Reset Defaults"):
         st.session_state.weights = dict(DEFAULT_WEIGHTS)
         st.rerun()
