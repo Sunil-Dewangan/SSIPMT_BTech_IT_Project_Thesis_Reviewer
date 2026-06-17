@@ -36,7 +36,7 @@ def safe(text):
     return text.encode('latin-1', 'replace').decode('latin-1')
 
 def sc(s):
-    if s >= 95: return (22,163,74)
+    if s >= 85: return (22,163,74)
     if s >= 75: return (37,99,235)
     if s >= 40: return (194,65,12)
     return (220,38,38)
@@ -160,7 +160,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     # Threshold legend
     pdf.set_font("Helvetica","I",7)
     pdf.set_text_color(100,100,100)
-    pdf.cell(0,4,"Score thresholds:  >= 95 = APPROVED  |  75-84 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
+    pdf.cell(0,4,"Score thresholds:  >= 95 = APPROVED  |  75-94 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
@@ -267,7 +267,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
             if not el: continue
             present=el.get("present",False)
             pdf.set_font("Helvetica","",8)
-            pdf.cell(95,5,safe(nm))
+            pdf.cell(85,5,safe(nm))
             pdf.set_text_color(22,163,74) if present else pdf.set_text_color(220,38,38)
             pdf.set_font("Helvetica","B",8)
             cnt=f" ({el['count']})" if "count" in el else ""
@@ -327,17 +327,23 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_fill_color(239,246,255); pdf.set_font("Helvetica","B",9)
     pdf.multi_cell(0,6,safe(f"Project: {review.get('project_title','-')}"),border=1,fill=True)
     pdf.set_font("Helvetica","",8)
-    pdf.cell(0,5,safe(f"Student(s): {', '.join(review.get('student_names',['-']))}   |   Guide: {review.get('guide_name','-')}"),border="B",ln=True)
+    # FIX: use multi_cell so long student names wrap instead of overflow
+    students = ", ".join(review.get('student_names',['-']))
+    guide    = review.get('guide_name','-')
+    pdf.multi_cell(0,5,safe(f"Student(s): {students}"),border=0,fill=False)
+    pdf.cell(0,5,safe(f"Guide: {guide}"),border="B",ln=True)
     pdf.ln(3)
 
-    # Score + Recommendation
+    # Score + Recommendation — two boxes, threshold legend below
     pdf.set_fill_color(30,58,138); pdf.set_text_color(255,255,255)
     pdf.set_font("Helvetica","B",30)
-    pdf.cell(38,24,safe(str(weighted_score)),border=1,fill=True,align="C")
-    pdf.set_fill_color(*rb); pdf.set_text_color(*rc); pdf.set_font("Helvetica","B",10)
-    pdf.cell(75,24,safe(rec.replace("_"," ")),border=1,fill=True,align="C")
-    pdf.set_fill_color(248,250,252); pdf.set_text_color(70,70,70); pdf.set_font("Helvetica","",8)
-    pdf.cell(0,24,safe(f"  Score: {weighted_score}/100\n  AI raw: {review.get('overall_score',0)}/100\n  Thresholds: >=95 Approved, >=75 Minor,\n  >=40 Major, <40 Rejected"),border=1,fill=True,ln=True)
+    pdf.cell(38,22,safe(str(weighted_score)),border=1,fill=True,align="C")
+    pdf.set_fill_color(*rb); pdf.set_text_color(*rc); pdf.set_font("Helvetica","B",11)
+    pdf.cell(0,22,safe(rec.replace("_"," ")),border=1,fill=True,align="C",ln=True)
+    pdf.set_text_color(0,0,0)
+    # Threshold legend on its own line — no overflow
+    pdf.set_font("Helvetica","I",7); pdf.set_text_color(100,100,100)
+    pdf.cell(0,4,safe(f"Score: {weighted_score}/100  |  AI raw: {review.get('overall_score',0)}/100  |  >=95 Approved  |  75-94 Minor  |  40-74 Major  |  <40 Rejected"),ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
     # Dimension table
