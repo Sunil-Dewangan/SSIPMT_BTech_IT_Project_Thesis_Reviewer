@@ -1,5 +1,4 @@
 
-
 import streamlit as st
 from groq import Groq
 import json
@@ -38,11 +37,11 @@ st.markdown("""
 <div style='text-align:center; padding:18px 0 10px 0;'>
   <span style='font-size:36px;'>🎓</span>
   <h2 style='margin:4px 0 2px 0; color:#1e3a8a; font-size:26px;'>
-    SSIPMT, Raipur Project Thesis Report Reviewer
+    SSIPMT Project Thesis Report Reviewer
   </h2>
   <p style='margin:0; color:#6b7280; font-size:25px;'>
     Department of Information Technology &nbsp;|&nbsp;
-    Developed by <strong>Sunil Kumar Dewangan</strong>
+    Developed by <strong>Sunil Dewangan</strong>
   </p>
 </div>
 <hr style='border:none; border-top:2px solid #e5e7eb; margin-bottom:18px;'/>
@@ -81,21 +80,23 @@ GENERAL: No first-person (no I/we/our/my), no placeholder text, min 2 pages per 
 """
 
 def build_system_prompt(session, sub_name, sub_code, semester, fulfillment):
-    return f"""You are a strict, thorough, and fair B.Tech project report reviewer for SSIPMT Raipur, Dept. of IT.
+    """Short system prompt — keeps token count low for Groq free tier."""
+    return f"""You are a strict B.Tech project report reviewer for SSIPMT Raipur, Dept. of IT.
 
-Review context:
-- Session: {session}
-- Subject: {sub_name} (Code: {sub_code})
-- Semester: {semester}
-- Degree: {fulfillment}
+Review context: Session={session}, Subject={sub_name} ({sub_code}), Semester={semester}, {fulfillment}
 
-Official SSIPMT Guidelines:
-{GUIDELINES}
+Key SSIPMT rules:
+- A4, 1-inch margins, Times New Roman 12pt, 1.5 spacing, box border every page
+- Front matter (8 sections): Declaration, Supervisor Cert, Examiner Cert, Acknowledgement, Abbreviations, Figures List, TOC, Abstract(300-500 words,5-8 keywords)
+- 14 mandatory chapters: Ch1 Introduction(5 sections), Ch2 Previous Work(7+sections+summary), Ch3 System Analysis, Ch4 Feasibility(5 types), Ch5 Analysis(DFD L0+L1+L2+ER+DB Tables), Ch6 Waterfall, Ch7 Methodology+Algorithms, Ch8 Requirements, Ch9 Design, Ch10 Screenshots, Ch11 Implementation+Maintenance, Ch12 Testing(8 types+test tables), Ch13 Security, Ch14 Conclusion+Future Scope
+- References: min 15, min 10 peer-reviewed, IEEE format, no Wikipedia
+- No first-person language, no placeholders, min 2 pages per chapter, 40-80 total pages
 
-Be specific — cite actual content when identifying issues. Be thorough but fair.
+Return ONLY valid JSON matching this exact structure (no markdown, no backticks):"""
 
-Return ONLY valid JSON, no markdown, no backticks, no text outside JSON:
-{{"project_title":"string","report_type":"string","student_names":["array"],"guide_name":"string","overall_score":number,"overall_recommendation":"APPROVED or MINOR_REVISION or MAJOR_REVISION or REJECTED","executive_summary":"3-4 sentences","format_compliance":{{"score":number,"checks":[{{"item":"string","status":"PASS or FAIL or WARNING or CANNOT_VERIFY","detail":"string"}}]}},"front_matter":{{"score":number,"sections":[{{"name":"string","present":true,"issues":"string or null"}}]}},"chapters":[{{"number":number,"title":"string","present":true,"estimated_pages":number,"meets_2page_minimum":true,"score":number,"issues":["array"],"strengths":["array"],"feedback":"string"}}],"technical_elements":{{"score":number,"dfd_level0":{{"present":true,"issues":"null"}},"dfd_level1":{{"present":true,"issues":"null"}},"dfd_level2":{{"present":true,"issues":"null"}},"er_diagram":{{"present":true,"issues":"null"}},"table_structures":{{"present":true,"count":number,"issues":"null"}},"algorithms":{{"present":true,"count":number,"properly_formatted":true,"issues":"null"}},"waterfall_diagram":{{"present":true,"issues":"null"}},"testing_types":{{"count":number,"types_found":["array"],"issues":"null"}}}},"abstract":{{"score":number,"estimated_word_count":number,"within_300_500":true,"has_keywords":true,"keyword_count":number,"covers_problem":true,"covers_solution":true,"covers_technologies":true,"covers_results":true,"has_citations":false,"issues":["array"],"feedback":"string"}},"references":{{"score":number,"total_count":number,"meets_minimum_15":true,"peer_reviewed_count":number,"meets_10_peer_reviewed":true,"ieee_format":"FULL or PARTIAL or POOR","issues":["array"],"feedback":"string"}},"language_quality":{{"score":number,"first_person_violations":["array"],"grammar_quality":"POOR or FAIR or GOOD or EXCELLENT","technical_accuracy":"POOR or FAIR or GOOD or EXCELLENT","academic_tone":"POOR or FAIR or GOOD or EXCELLENT","placeholder_text_found":false,"feedback":"string"}},"critical_issues":["array"],"major_issues":["array"],"minor_issues":["array"],"strengths":["array"],"priority_action_list":[{{"priority":number,"action":"string","location":"string","severity":"CRITICAL or MAJOR or MINOR"}}]}}"""
+
+JSON_SCHEMA = '{"project_title":"string","report_type":"string","student_names":["array"],"guide_name":"string","overall_score":number,"overall_recommendation":"APPROVED or MINOR_REVISION or MAJOR_REVISION or REJECTED","executive_summary":"3-4 sentences","format_compliance":{"score":number,"checks":[{"item":"string","status":"PASS or FAIL or WARNING or CANNOT_VERIFY","detail":"string"}]},"front_matter":{"score":number,"sections":[{"name":"string","present":true,"issues":"string or null"}]},"chapters":[{"number":number,"title":"string","present":true,"estimated_pages":number,"meets_2page_minimum":true,"score":number,"issues":["array"],"strengths":["array"],"feedback":"string"}],"technical_elements":{"score":number,"dfd_level0":{"present":true,"issues":"null"},"dfd_level1":{"present":true,"issues":"null"},"dfd_level2":{"present":true,"issues":"null"},"er_diagram":{"present":true,"issues":"null"},"table_structures":{"present":true,"count":number,"issues":"null"},"algorithms":{"present":true,"count":number,"properly_formatted":true,"issues":"null"},"waterfall_diagram":{"present":true,"issues":"null"},"testing_types":{"count":number,"types_found":["array"],"issues":"null"}},"abstract":{"score":number,"estimated_word_count":number,"within_300_500":true,"has_keywords":true,"keyword_count":number,"covers_problem":true,"covers_solution":true,"covers_technologies":true,"covers_results":true,"has_citations":false,"issues":["array"],"feedback":"string"},"references":{"score":number,"total_count":number,"meets_minimum_15":true,"peer_reviewed_count":number,"meets_10_peer_reviewed":true,"ieee_format":"FULL or PARTIAL or POOR","issues":["array"],"feedback":"string"},"language_quality":{"score":number,"first_person_violations":["array"],"grammar_quality":"POOR or FAIR or GOOD or EXCELLENT","technical_accuracy":"POOR or FAIR or GOOD or EXCELLENT","academic_tone":"POOR or FAIR or GOOD or EXCELLENT","placeholder_text_found":false,"feedback":"string"},"critical_issues":["array"],"major_issues":["array"],"minor_issues":["array"],"strengths":["array"],"priority_action_list":[{"priority":number,"action":"string","location":"string","severity":"CRITICAL or MAJOR or MINOR"}]}'
+
 
 # ─────────────────────────────────────────────
 # DEFAULTS
@@ -145,7 +146,7 @@ def override_recommendation(weighted_score):
     """Override AI recommendation based on weighted score thresholds."""
     if weighted_score >= 95:
         return "APPROVED"
-    elif weighted_score >= 80:
+    elif weighted_score >= 75:
         return "MINOR_REVISION"
     elif weighted_score >= 40:
         return "MAJOR_REVISION"
@@ -155,7 +156,7 @@ def override_recommendation(weighted_score):
 def count_pdf_pages(pdf_bytes):
     doc=fitz.open(stream=pdf_bytes,filetype="pdf"); n=len(doc); doc.close(); return n
 
-def extract_text_from_pdf(pdf_bytes, max_chars=25000):
+def extract_text_from_pdf(pdf_bytes, max_chars=9000):
     """Extract text — front-heavy (75% front, 25% back) to capture structure + references."""
     doc=fitz.open(stream=pdf_bytes,filetype="pdf"); total=len(doc)
     front_end=int(total*0.75)
@@ -187,7 +188,7 @@ def extract_file(uploaded_file):
         est_pages=len(text.split())//300
         if est_pages>MAX_PAGES:
             raise ValueError(f"Document estimated at ~{est_pages} pages. Maximum is {MAX_PAGES} pages.")
-        return {"text":text[:25000],"name":uploaded_file.name,"pages":est_pages}
+        return {"text":text[:9000],"name":uploaded_file.name,"pages":est_pages}
     raise ValueError("Upload PDF or DOCX only.")
 
 def robust_json_parse(raw):
@@ -219,13 +220,16 @@ def robust_json_parse(raw):
     raise ValueError("No valid JSON in response")
 
 def call_groq(file_data, system_prompt):
-    """Send extracted text to Groq and get JSON review."""
+    """Send extracted text to Groq — short prompt + JSON schema in user msg to fit free tier limit."""
     api_key=get_api_key()
     if not api_key: st.error("⚠️ No Groq API key found."); st.stop()
 
     client=Groq(api_key=api_key)
-    prompt=(f"B.Tech Project Report ({file_data['name']}, ~{file_data.get('pages','?')} pages):\n\n"
-            f"{file_data['text']}\n\nReview against SSIPMT guidelines. Return only the JSON.")
+    # Limit text to 9000 chars (~2,250 tokens) so total stays under 6,000 TPM
+    text = file_data["text"][:9000]
+    prompt=(f"Report: {file_data['name']} (~{file_data.get('pages','?')} pages)\n\n"
+            f"{text}\n\n"
+            f"Review against SSIPMT rules. Return JSON matching this structure:\n{JSON_SCHEMA}")
 
     response=client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -249,7 +253,7 @@ def show_review(rv):
         st.write(rv.get("executive_summary",""))
     with c2: st.metric("Weighted Score",f"{ws}/100"); st.caption(f"AI raw: {rv.get('overall_score',0)}")
     with c3: st.metric("Decision",""); st.markdown(f"**{rec_icon(rec)}**")
-    st.caption("Score thresholds:  >=95 = APPROVED  |  75-94 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  <40 = REJECTED")
+    st.caption("Score thresholds:  >=95 = APPROVED  |  75-84 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  <40 = REJECTED")
     st.divider()
 
     cols=st.columns(6)
@@ -380,7 +384,7 @@ if not get_api_key():
             type="password", help="Get free key at console.groq.com")
         st.caption("🔗 [Get free key → console.groq.com](https://console.groq.com)")
 else:
-    st.caption("✅ API key loaded")
+    st.caption("✅ Groq API key loaded")
 
 # ─────────────────────────────────────────────
 # REPORT INFORMATION FORM
