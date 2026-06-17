@@ -36,7 +36,7 @@ def safe(text):
     return text.encode('latin-1', 'replace').decode('latin-1')
 
 def sc(s):
-    if s >= 85: return (22,163,74)
+    if s >= 95: return (22,163,74)
     if s >= 75: return (37,99,235)
     if s >= 40: return (194,65,12)
     return (220,38,38)
@@ -125,9 +125,9 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.sec("Report Information")
     for i,(k,v) in enumerate([
         ("Project Title", review.get("project_title","-")),
-        #("Student(s)",    ", ".join(review.get("student_names",["-"]))),
-        #("Guide",         review.get("guide_name","-")),
-        #("Report Type",   review.get("report_type","B.Tech Project Report")),
+        ("Student(s)",    ", ".join(review.get("student_names",["-"]))),
+        ("Guide",         review.get("guide_name","-")),
+        ("Report Type",   review.get("report_type","B.Tech Project Report")),
     ]):
         pdf.kv(k, str(v)[:95], fill=(i%2==0))
 
@@ -160,7 +160,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     # Threshold legend
     pdf.set_font("Helvetica","I",7)
     pdf.set_text_color(100,100,100)
-    pdf.cell(0,4,"Score thresholds:  >= 95 = APPROVED  |  75-94 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
+    pdf.cell(0,4,"Score thresholds:  >= 85 = APPROVED  |  75-84 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
@@ -316,49 +316,36 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     rec = recommendation or review.get("overall_recommendation","")
     rc=rec_color(rec); rb=rec_bg(rec)
     date_str=datetime.now().strftime("%d %B %Y")
-    W=170  # usable page width (210 - 20 left - 20 right)
 
-    # ── Title ──
     pdf.ln(2)
     pdf.set_font("Helvetica","B",14); pdf.set_text_color(30,58,138)
-    pdf.cell(W,9,"STUDENT REVIEW REPORT CARD",align="C",ln=True)
+    pdf.cell(0,9,"STUDENT REVIEW REPORT CARD",align="C",ln=True)
     pdf.set_font("Helvetica","",8); pdf.set_text_color(100,100,100)
-    pdf.cell(W,5,safe(f"B.Tech Project Report  |  {date_str}"),align="C",ln=True)
+    pdf.cell(0,5,safe(f"B.Tech Project Report  |  {date_str}"),align="C",ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
-    # ── Project Info ──
     pdf.set_fill_color(239,246,255); pdf.set_font("Helvetica","B",9)
-    pdf.multi_cell(W,6,safe(f"Project: {review.get('project_title','-')}"),border=1,fill=True)
+    pdf.multi_cell(0,6,safe(f"Project: {review.get('project_title','-')}"),border=1,fill=True)
     pdf.set_font("Helvetica","",8)
-    # Student names on separate line to prevent overflow
-    students = ", ".join(review.get('student_names',['-']))
-    pdf.multi_cell(W,5,safe(f"Student(s): {students}"),border=0,fill=False)
-    pdf.cell(W,5,safe(f"Guide: {review.get('guide_name','-')}"),border="B",ln=True)
+    pdf.cell(0,5,safe(f"Student(s): {', '.join(review.get('student_names',['-']))}   |   Guide: {review.get('guide_name','-')}"),border="B",ln=True)
     pdf.ln(3)
 
-    # ── Score + Recommendation ──
-    score_w=38; rec_w=W-score_w
+    # Score + Recommendation
     pdf.set_fill_color(30,58,138); pdf.set_text_color(255,255,255)
     pdf.set_font("Helvetica","B",30)
-    pdf.cell(score_w,22,safe(str(weighted_score)),border=1,fill=True,align="C")
-    pdf.set_fill_color(*rb); pdf.set_text_color(*rc)
-    pdf.set_font("Helvetica","B",12)
-    pdf.cell(rec_w,22,safe(rec.replace("_"," ")),border=1,fill=True,align="C",ln=True)
-    pdf.set_text_color(0,0,0)
-    # Threshold legend — full width, no overflow
-    pdf.set_font("Helvetica","I",7); pdf.set_text_color(100,100,100)
-    pdf.cell(W,4,safe(f"Score:{weighted_score}/100  AI raw:{review.get('overall_score',0)}/100  |  >=95=Approved  75-94=Minor  40-74=Major  <40=Rejected"),ln=True)
+    pdf.cell(38,24,safe(str(weighted_score)),border=1,fill=True,align="C")
+    pdf.set_fill_color(*rb); pdf.set_text_color(*rc); pdf.set_font("Helvetica","B",10)
+    pdf.cell(75,24,safe(rec.replace("_"," ")),border=1,fill=True,align="C")
+    pdf.set_fill_color(248,250,252); pdf.set_text_color(70,70,70); pdf.set_font("Helvetica","",8)
+    pdf.cell(0,24,safe(f"  Score: {weighted_score}/100\n  AI raw: {review.get('overall_score',0)}/100\n  Thresholds: >=85 Approved, >=75 Minor,\n  >=40 Major, <40 Rejected"),border=1,fill=True,ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
-    # ── Dimension Table ──
-    dim_w=72; sc_w=18; wt_w=18; st_w=W-dim_w-sc_w-wt_w
+    # Dimension table
     pdf.set_font("Helvetica","B",8)
     pdf.set_fill_color(30,58,138); pdf.set_text_color(255,255,255)
-    pdf.cell(dim_w,6,"Dimension",border=1,fill=True)
-    pdf.cell(sc_w,6,"Score",border=1,fill=True,align="C")
-    pdf.cell(wt_w,6,"Weight",border=1,fill=True,align="C")
-    pdf.cell(st_w,6,"Status",border=1,fill=True,ln=True)
-    pdf.set_text_color(0,0,0)
+    for hdr,w in [("Dimension",72),("Score",18),("Weight",18),("Status",62)]:
+        pdf.cell(w,6,safe(hdr),border=1,fill=True,align="C" if w<30 else "L")
+    pdf.ln(); pdf.set_text_color(0,0,0)
 
     dims=[
         ("Format Compliance",  review.get("format_compliance",{}).get("score",0),  weights.get("format",15)),
@@ -371,51 +358,37 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     for i,(name,score,wt) in enumerate(dims):
         pdf.set_fill_color(255,255,255) if i%2==0 else pdf.set_fill_color(249,250,251)
         pdf.set_font("Helvetica","",8)
-        pdf.cell(dim_w,5,safe(name),border=1,fill=True)
-        pdf.sc_cell(score,sc_w,5)
-        pdf.cell(wt_w,5,safe(f"{wt}%"),border=1,align="C",fill=True)
-        st2="Good" if score>=80 else ("Needs improvement" if score>=60 else "Significant revision needed")
+        pdf.cell(72,5,safe(name),border=1,fill=True)
+        pdf.sc_cell(score,18,5)
+        pdf.cell(18,5,safe(f"{wt}%"),border=1,align="C",fill=True)
+        st2="Good - meets standard" if score>=80 else ("Needs improvement" if score>=60 else "Significant revision required")
         pdf.set_font("Helvetica","",7)
-        pdf.cell(st_w,5,safe(st2),border=1,fill=True,ln=True)
+        pdf.cell(62,5,safe(st2),border=1,fill=True,ln=True)
     pdf.ln(3)
 
-    # ── Priority Actions ──
+    # Top 5 actions
     pal=review.get("priority_action_list",[])[:5]
     if pal:
-        lbl_w=28; act_w=W-lbl_w
         pdf.set_font("Helvetica","B",9); pdf.set_text_color(30,58,138)
-        pdf.cell(W,6,"Priority Actions for Student:",ln=True)
-        pdf.set_text_color(0,0,0)
+        pdf.cell(0,6,"Priority Actions for Student:",ln=True); pdf.set_text_color(0,0,0)
         for a in pal:
             sev=a.get("severity","")
             sc2={"CRITICAL":(220,38,38),"MAJOR":(234,88,12),"MINOR":(37,99,235)}.get(sev,(0,0,0))
             bg2={"CRITICAL":(254,242,242),"MAJOR":(255,247,237),"MINOR":(239,246,255)}.get(sev,(249,250,251))
-            pdf.set_fill_color(*bg2)
-            pdf.set_font("Helvetica","B",8); pdf.set_text_color(*sc2)
-            pdf.cell(lbl_w,5,safe(f"{a.get('priority','')}. [{sev}]"),border="L",fill=True)
+            pdf.set_fill_color(*bg2); pdf.set_font("Helvetica","B",8); pdf.set_text_color(*sc2)
+            pdf.cell(26,5,safe(f"{a['priority']}. [{sev}]"),border="L",fill=True)
             pdf.set_text_color(0,0,0); pdf.set_font("Helvetica","",8)
-            action_txt=safe(str(a.get("action",""))[:80]+" - "+str(a.get("location","")))
-            pdf.cell(act_w,5,action_txt,border="B",fill=True,ln=True)
+            pdf.cell(0,5,safe(str(a.get("action",""))[:85]+" - "+str(a.get("location",""))),border="B",fill=True,ln=True)
     pdf.ln(5)
 
-    # ── Signature ──
     pdf.set_draw_color(180,180,180)
-    pdf.line(pdf.l_margin,pdf.get_y(),210-pdf.r_margin,pdf.get_y())
-    pdf.ln(3)
-    sig1=80; sig2=60; sig3=W-sig1-sig2
+    pdf.line(pdf.l_margin,pdf.get_y(),210-pdf.r_margin,pdf.get_y()); pdf.ln(3)
     pdf.set_font("Helvetica","",9)
-    pdf.cell(sig1,5,"Reviewer:",ln=False)
-    pdf.cell(sig2,5,"Dept. of IT, SSIPMT Raipur",ln=False)
-    pdf.cell(sig3,5,safe(f"Date: {date_str}"),ln=True)
-    pdf.ln(10)
-    pdf.cell(sig1,0,"_"*32,ln=False)
-    pdf.cell(sig2,0,"_"*26,ln=False)
-    pdf.cell(sig3,0,"_"*14,ln=True)
-    pdf.ln(3)
+    pdf.cell(80,5,"Reviewer:",ln=False); pdf.cell(70,5,"Dept. of IT, SSIPMT Raipur",ln=False)
+    pdf.cell(0,5,safe(f"Date: {date_str}"),ln=True); pdf.ln(10)
+    pdf.cell(80,0,"_"*32,ln=False); pdf.cell(70,0,"_"*28,ln=False); pdf.cell(0,0,"_"*14,ln=True); pdf.ln(3)
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(150,150,150)
-    pdf.cell(sig1,4,"Name & Signature",ln=False)
-    pdf.cell(sig2,4,"Department Stamp",ln=False)
-    pdf.cell(sig3,4,"Signature",ln=True)
+    pdf.cell(80,4,"Name & Signature",ln=False); pdf.cell(70,4,"Department Stamp",ln=False); pdf.cell(0,4,"Signature",ln=True)
 
     buf=io.BytesIO(); pdf.output(buf); return buf.getvalue()
 
