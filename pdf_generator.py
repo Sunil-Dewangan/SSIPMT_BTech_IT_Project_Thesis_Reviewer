@@ -123,13 +123,17 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
 
     # ── Report Info ──
     pdf.sec("Report Information")
-    for i,(k,v) in enumerate([
-        ("Project Title", review.get("project_title","-")),
-        ("Student(s)",    ", ".join(review.get("student_names",["-"]))),
-        ("Guide",         review.get("guide_name","-")),
-        ("Report Type",   review.get("report_type","B.Tech Project Report")),
-    ]):
-        pdf.kv(k, str(v)[:95], fill=(i%2==0))
+    for i, (k, v) in enumerate([
+    ("Project Title", review.get("project_title", "-")),
+    ("Guide",         review.get("guide_name", "-")),
+    ("Report Type",   review.get("report_type", "B.Tech Project Report")),
+]):
+    pdf.kv(k, str(v)[:95], fill=(i % 2 == 0))
+
+# Handle student names separately with line breaks
+student_names = review.get("student_names", ["-"])
+students_text = "\n".join(student_names)
+pdf.kv("Student(s)", students_text, fill=False)
 
     # ── Score Summary ──
     pdf.ln(4)
