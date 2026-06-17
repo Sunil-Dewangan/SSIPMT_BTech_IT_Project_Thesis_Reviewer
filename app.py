@@ -1,5 +1,4 @@
 
-
 import streamlit as st
 from groq import Groq
 import json
@@ -141,6 +140,17 @@ def compute_weighted_score(review):
          "language":review.get("language_quality",{}).get("score",0)}
     return round(sum(dim[k]*(wt[k]/total) for k in wt))
 
+def override_recommendation(weighted_score):
+    """Override AI recommendation based on weighted score thresholds."""
+    if weighted_score >= 85:
+        return "APPROVED"
+    elif weighted_score >= 75:
+        return "MINOR_REVISION"
+    elif weighted_score >= 40:
+        return "MAJOR_REVISION"
+    else:
+        return "REJECTED"
+
 def count_pdf_pages(pdf_bytes):
     doc=fitz.open(stream=pdf_bytes,filetype="pdf"); n=len(doc); doc.close(); return n
 
@@ -204,7 +214,8 @@ def call_groq(file_data, system_prompt):
 # DISPLAY REVIEW
 # ─────────────────────────────────────────────
 def show_review(rv):
-    ws=compute_weighted_score(rv); rec=rv.get("overall_recommendation","")
+    ws=compute_weighted_score(rv)
+    rec=override_recommendation(ws)
     c1,c2,c3=st.columns([4,1,1])
     with c1:
         st.subheader(rv.get("project_title","Untitled"))
