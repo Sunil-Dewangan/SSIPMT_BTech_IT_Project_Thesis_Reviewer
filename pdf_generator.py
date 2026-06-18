@@ -160,7 +160,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     # Threshold legend
     pdf.set_font("Helvetica","I",7)
     pdf.set_text_color(100,100,100)
-    pdf.cell(0,4,"Score thresholds:  >= 85 = APPROVED  |  75-84 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
+    pdf.cell(0,4,"Score thresholds:  >= 95 = APPROVED  |  75-94 = MINOR REVISION  |  40-74 = MAJOR REVISION  |  < 40 = REJECTED",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(2)
 
@@ -267,7 +267,7 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
             if not el: continue
             present=el.get("present",False)
             pdf.set_font("Helvetica","",8)
-            pdf.cell(85,5,safe(nm))
+            pdf.cell(95,5,safe(nm))
             pdf.set_text_color(22,163,74) if present else pdf.set_text_color(220,38,38)
             pdf.set_font("Helvetica","B",8)
             cnt=f" ({el['count']})" if "count" in el else ""
@@ -291,8 +291,8 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.sec("Reviewer Sign-off")
     pdf.ln(8)
     pdf.set_font("Helvetica","",9)
-    pdf.cell(80,5,"Reviewed by:",ln=False)
-    pdf.cell(70,5,"Designation:",ln=False)
+    pdf.cell(80,5,"Guide:",ln=False)
+    pdf.cell(70,5,"Project In-Charge:",ln=False)
     pdf.cell(0,5,safe(f"Date: {date_str}"),ln=True)
     pdf.ln(14)
     pdf.cell(80,0,"_"*34,ln=False)
@@ -300,9 +300,9 @@ def generate_full_report(review:dict, weights:dict, weighted_score:int, recommen
     pdf.cell(0,0,"_"*13,ln=True)
     pdf.ln(3)
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(100,100,100)
-    pdf.cell(80,4,"Name & Designation",ln=False)
-    pdf.cell(70,4,"Department / SSIPMT Raipur",ln=False)
-    pdf.cell(0,4,"Signature",ln=True)
+    pdf.cell(80,4,"Name & Signature",ln=False)
+    pdf.cell(70,4,"Signature",ln=False)
+    pdf.cell(0,4,"HoD Signature",ln=True)
     pdf.set_text_color(0,0,0)
     pdf.ln(8)
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(150,150,150)
@@ -337,7 +337,7 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     pdf.set_fill_color(*rb); pdf.set_text_color(*rc); pdf.set_font("Helvetica","B",10)
     pdf.cell(75,24,safe(rec.replace("_"," ")),border=1,fill=True,align="C")
     pdf.set_fill_color(248,250,252); pdf.set_text_color(70,70,70); pdf.set_font("Helvetica","",8)
-    pdf.cell(0,24,safe(f"  Score: {weighted_score}/100\n  AI raw: {review.get('overall_score',0)}/100\n  Thresholds: >=85 Approved, >=75 Minor,\n  >=40 Major, <40 Rejected"),border=1,fill=True,ln=True)
+    pdf.cell(0,24,safe(f"  Score: {weighted_score}/100\n  AI raw: {review.get('overall_score',0)}/100\n  Thresholds: >=95 Approved, >=75 Minor,\n  >=40 Major, <40 Rejected"),border=1,fill=True,ln=True)
     pdf.set_text_color(0,0,0); pdf.ln(3)
 
     # Dimension table
@@ -378,7 +378,7 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
             pdf.set_fill_color(*bg2); pdf.set_font("Helvetica","B",8); pdf.set_text_color(*sc2)
             pdf.cell(26,5,safe(f"{a['priority']}. [{sev}]"),border="L",fill=True)
             pdf.set_text_color(0,0,0); pdf.set_font("Helvetica","",8)
-            pdf.cell(0,5,safe(str(a.get("action",""))[:85]+" - "+str(a.get("location",""))),border="B",fill=True,ln=True)
+            pdf.cell(0,5,safe(str(a.get("action",""))[:95]+" - "+str(a.get("location",""))),border="B",fill=True,ln=True)
     pdf.ln(5)
 
     pdf.set_draw_color(180,180,180)
@@ -388,7 +388,7 @@ def generate_report_card(review:dict, weights:dict, weighted_score:int, recommen
     pdf.cell(0,5,safe(f"Date: {date_str}"),ln=True); pdf.ln(10)
     pdf.cell(80,0,"_"*32,ln=False); pdf.cell(70,0,"_"*28,ln=False); pdf.cell(0,0,"_"*14,ln=True); pdf.ln(3)
     pdf.set_font("Helvetica","I",7); pdf.set_text_color(150,150,150)
-    pdf.cell(80,4,"Name & Signature",ln=False); pdf.cell(70,4,"Department Stamp",ln=False); pdf.cell(0,4,"Signature",ln=True)
+    pdf.cell(80,4,"Guide Name & Signature",ln=False); pdf.cell(70,4,"Project In-Charge Signature",ln=False); pdf.cell(0,4,"HoD Signature",ln=True)
 
     buf=io.BytesIO(); pdf.output(buf); return buf.getvalue()
 
