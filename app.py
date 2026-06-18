@@ -1,10 +1,4 @@
-"""
-SSIPMT B.Tech Project Thesis Report Reviewer
-Department of Information Technology, SSIPMT Raipur
-Developed by Sunil Kumar Dewangan
-Powered by Groq API — 100% FREE
-Get free API key at: https://console.groq.com
-"""
+
 
 import streamlit as st
 from groq import Groq
